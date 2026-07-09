@@ -2,7 +2,7 @@
 
 **Created:** 2026-07-09
 **Status:** Planning — hardware confirmed, partition layout and install sequence defined
-**Goal:** Multi-boot DOS 6.22, Windows 98 SE, BeOS R5 Pro (with Dano 5.1d upgrade), Windows XP, and Debian Linux from a single 128GB IDE drive using BootIt Bare Metal
+**Goal:** Multi-boot DOS 6.22, Windows 98 SE, BeOS R5 Pro (with BONE network stack), Windows XP, and Debian Linux from a single 128GB IDE drive using BootIt Bare Metal
 
 ---
 
@@ -25,16 +25,16 @@ Each OS has era-specific limitations that constrain partition layout, drive size
 - Windows 9x boots from C: — its boot files land on the active primary partition
 - Supports real-mode DOS for gaming (DOS 7.1 built in)
 
-### BeOS R5 Pro (with Dano 5.1d upgrade)
+### BeOS R5 Pro (with BONE network stack)
 - Filesystem: BFS (Be File System) — native, journaling, 64-bit capable
 - Min requirements: 32MB RAM, 200MB disk space, Pentium-class CPU
 - Max RAM: ~1GB (crashes above this)
 - Partition type: 0xEB (BeOS BFS) — BootIt BM supports custom partition types
 - Can install its own boot manager (bootman) — but we will use BootIt BM instead, so decline bootman during install
 - BeOS Drive Setup can partition and format BFS; alternatively pre-create the partition in BootIt BM and format with 2KB block size
-- Recommended partition size: 2GB (BeOS R5 is small, but Dano + apps need room)
+- Recommended partition size: 2GB (BeOS R5 is small, but BONE + apps need room)
 - Position constraint: ideally within first 8GB for safest BIOS access (BeOS R5 uses INT 13h)
-- **R5 Pro → Dano 5.1d upgrade:** Install BeOS R5 Pro first, then upgrade to Dano 5.1d. Dano includes BONE (BeOS Networking Environment) — the improved network stack. The original R5 net_server stack is poor (missing getsockopt, etc.). Dano was leaked after Be's sale to Palm and is the last BeOS version. Install R5 Pro base, then apply Dano upgrade over it.
+- **BONE install:** Install BeOS R5 Pro first, then install the BONE (BeOS Networking Environment) package on top of R5 Pro. BONE is the improved network stack from the Dano codebase, but can be installed without upgrading the entire OS to Dano 5.1d. The original R5 net_server stack is poor (missing getsockopt, etc.). BONE replaces it with the newer Dano-era networking stack while keeping R5 Pro as the base OS.
 
 ### Windows XP
 - Filesystem: NTFS (recommended) or FAT32
@@ -100,7 +100,7 @@ Drive size assumption: 40GB–128GB (TBD based on hardware). Layout shown with e
 | P0 | EMBRM (0xDF) | — | ~8MB | BootIt BM boot manager | Must be first |
 | P1 | Primary | FAT16 | 1GB | DOS 6.22 | Must be within first 8GB |
 | P2 | Primary | FAT32 | 10GB | Windows 98 SE | Within 128GB limit |
-| P3 | Primary | BFS (0xEB) | 2GB | BeOS R5 Pro + Dano 5.1d | Within first 8GB for safe BIOS access |
+| P3 | Primary | BFS (0xEB) | 2GB | BeOS R5 Pro + BONE | Within first 8GB for safe BIOS access |
 | P4 | Primary | NTFS | 20GB | Windows XP | No constraint |
 | P5 | Primary | Ext3 | 10GB | Debian Linux | GRUB/LILO in boot sector, not MBR |
 | P6 | Primary | FAT32 | ~85GB | Shared data | Visible from Win98, XP, Debian |
@@ -113,7 +113,7 @@ Each boot item shows only the target OS partition and the shared data partition.
 |---|:---:|---|---|
 | DOS 6.22 | P1 (FAT16) | P1 | P2, P3, P4, P5, P6 |
 | Windows 98 SE | P2 (FAT32) | P2, P6 | P1, P3, P4, P5 |
-| BeOS R5 Pro (Dano) | P3 (BFS) | P3, P6* | P1, P2, P4, P5 |
+| BeOS R5 Pro (BONE) | P3 (BFS) | P3, P6* | P1, P2, P4, P5 |
 | Windows XP | P4 (NTFS) | P4, P6 | P1, P2, P3, P5 |
 | Debian Linux | P5 (Ext3) | P5, P6** | P1, P2, P3, P4 |
 
@@ -190,7 +190,7 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 4. Install to C: (P2)
 5. After install, remove One Time Option
 
-### Phase 5: Install BeOS R5 Pro + Dano 5.1d (P3)
+### Phase 5: Install BeOS R5 Pro + BONE (P3)
 1. Create boot item "BeOS R5 Pro"
    - Boot partition: P3
    - Hide: P1, P2, P4, P5
@@ -200,12 +200,12 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 3. Use BeOS Drive Setup to initialize P3 with BFS (2KB block size recommended)
 4. Install BeOS R5 Pro to P3
 5. When prompted to install BeOS boot manager (bootman) -> No (BootIt BM handles booting)
-6. After R5 Pro is installed, apply the Dano 5.1d upgrade:
+6. After R5 Pro is installed, install the BONE network stack:
    - Boot into R5 Pro
-   - Run the Dano 5.1d installer/upgrade over the existing R5 Pro install
-   - Dano replaces the net_server stack with BONE (BeOS Networking Environment)
-   - Reboot and verify BONE is active (Network preferences should show BONE)
-7. After upgrade, remove One Time Option from boot item
+   - Install the BONE (BeOS Networking Environment) package on top of R5 Pro
+   - BONE replaces the original net_server stack with the improved Dano-era networking stack
+   - Reboot and verify BONE is active (Network preferences should reflect the new stack)
+7. After BONE install, remove One Time Option from boot item
 
 ### Phase 6: Install Windows XP (P4)
 1. Create boot item "Windows XP"
@@ -251,15 +251,15 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 - **MBR overwrite:** Win98 setup may overwrite the MBR. BootIt BM recovers from P0, but reboot into BootIt BM immediately after install to verify.
 - **Drive letter C:** Win98 expects to be C:. The partition hiding in BootIt BM ensures P2 appears as C: when booted.
 
-### BeOS R5 Pro / Dano 5.1d
+### BeOS R5 Pro / BONE
 - **1GB RAM limit:** BeOS crashes with more than 1GB RAM. If the machine has >1GB, limit RAM in BIOS or use a BeOS memory limit flag.
 - **Partition type:** BeOS uses BFS (type 0xEB). BootIt BM can create this partition type but you may need to enter 0xEB manually.
 - **Block size:** Use 2KB (2048 byte) block size when formatting BFS. 4KB blocks can trigger bugs.
 - **Decline bootman:** When BeOS offers to install its own boot manager, say No. BootIt BM is the boot manager.
 - **VESA fallback:** BeOS driver support is limited. VESA mode works for most hardware. Expect 16-bit color max on many GPUs.
 - **BIOS access:** BeOS R5 uses INT 13h for disk access. Keep P3 within the first 8GB of the drive for reliable booting.
-- **Dano upgrade:** Install R5 Pro first, then apply Dano 5.1d over it. Dano includes BONE (BeOS Networking Environment) — the improved network stack. The original R5 net_server stack lacks getsockopt and other modern socket calls. Dano was leaked after Be's sale to Palm. Verify BONE is active after upgrade via Network preferences.
-- **Dano compatibility:** Some R5 Pro apps may not work with Dano's BONE stack. Test critical apps after upgrade.
+- **BONE install:** Install BONE on top of R5 Pro (not a full Dano upgrade). BONE replaces the original net_server stack with the improved Dano-era networking stack. The original R5 net_server stack lacks getsockopt and other modern socket calls. Verify BONE is active after install via Network preferences.
+- **BONE compatibility:** Some R5 Pro apps may not work with BONE. Test critical apps after install. BONE changes the networking layer, which can affect older network utilities.
 
 ### Windows XP
 - **MBR overwrite:** XP setup overwrites the MBR. BootIt BM stores its boot code in P0 and can restore itself. Reboot into BootIt BM after XP install to confirm.
@@ -310,6 +310,6 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 | DOS 6.22 | Install media | Needed | Floppy disks or CD |
 | Windows 98 SE | Install media | Needed | Boot floppy + CD |
 | BeOS R5 Pro | Install media | Needed | CD |
-| BeOS Dano 5.1d | Upgrade files | Needed | Applied over R5 Pro |
+| BeOS BONE | Network stack package | Needed | Installed on top of R5 Pro |
 | Windows XP | Install media | Needed | CD + license key |
 | Debian Linux | Install CD | Needed | Sarge 3.1 or Bookworm 12 |
