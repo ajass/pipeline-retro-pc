@@ -1,8 +1,10 @@
 # Pipeline-Retro-PC
 
-**Purpose:** Build a retro PC capable of multi-booting DOS 6.22, Windows 98 SE, BeOS R5, Windows XP, and Linux from a single drive using BootIt Bare Metal as the boot manager.
+**Purpose:** Build a retro PC capable of multi-booting DOS 6.22, Windows 98 SE, BeOS R5 Pro (with Dano 5.1d upgrade for BONE network stack), Windows XP, and Debian Linux from a single 128GB IDE drive using BootIt Bare Metal as the boot manager.
 
-**Status:** Planning — partition layout, install order, and boot configuration defined. Hardware TBD.
+**Hardware:** Slot 1 Intel Pentium III, 128GB IDE/PATA hard drive.
+
+**Status:** Planning — hardware confirmed, partition layout and install sequence defined. GPU/sound/RAM TBD.
 **Last Updated:** 2026-07-09
 
 ## Quick Links

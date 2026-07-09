@@ -1,8 +1,8 @@
 # PROJECT.md — Pipeline-Retro-PC
 
 **Created:** 2026-07-09
-**Status:** Planning — hardware TBD, partition layout and install sequence defined
-**Goal:** Multi-boot DOS 6.22, Windows 98 SE, BeOS R5, Windows XP, and Linux from a single drive using BootIt Bare Metal
+**Status:** Planning — hardware confirmed, partition layout and install sequence defined
+**Goal:** Multi-boot DOS 6.22, Windows 98 SE, BeOS R5 Pro (with Dano 5.1d upgrade), Windows XP, and Debian Linux from a single 128GB IDE drive using BootIt Bare Metal
 
 ---
 
@@ -25,15 +25,16 @@ Each OS has era-specific limitations that constrain partition layout, drive size
 - Windows 9x boots from C: — its boot files land on the active primary partition
 - Supports real-mode DOS for gaming (DOS 7.1 built in)
 
-### BeOS R5 (x86)
+### BeOS R5 Pro (with Dano 5.1d upgrade)
 - Filesystem: BFS (Be File System) — native, journaling, 64-bit capable
 - Min requirements: 32MB RAM, 200MB disk space, Pentium-class CPU
 - Max RAM: ~1GB (crashes above this)
 - Partition type: 0xEB (BeOS BFS) — BootIt BM supports custom partition types
 - Can install its own boot manager (bootman) — but we will use BootIt BM instead, so decline bootman during install
 - BeOS Drive Setup can partition and format BFS; alternatively pre-create the partition in BootIt BM and format with 2KB block size
-- Recommended partition size: 500MB–2GB (BeOS R5 is small)
+- Recommended partition size: 2GB (BeOS R5 is small, but Dano + apps need room)
 - Position constraint: ideally within first 8GB for safest BIOS access (BeOS R5 uses INT 13h)
+- **R5 Pro → Dano 5.1d upgrade:** Install BeOS R5 Pro first, then upgrade to Dano 5.1d. Dano includes BONE (BeOS Networking Environment) — the improved network stack. The original R5 net_server stack is poor (missing getsockopt, etc.). Dano was leaked after Be's sale to Palm and is the last BeOS version. Install R5 Pro base, then apply Dano upgrade over it.
 
 ### Windows XP
 - Filesystem: NTFS (recommended) or FAT32
@@ -42,27 +43,49 @@ Each OS has era-specific limitations that constrain partition layout, drive size
 - No cylinder/size limit for modern XP installs with SP2+
 - Can read FAT16, FAT32, NTFS
 
-### Linux (period-appropriate distro TBD)
+### Linux (Debian)
 - Filesystem: Ext2/3/4, ReiserFS, etc.
 - BootIt BM cannot boot Linux directly — chainloads to LILO or GRUB installed in the Linux partition's boot sector (NOT the MBR)
 - Can be on a primary or logical partition
 - During install: answer "No" to "install bootloader to MBR" and specify the root partition's boot sector
-- Period options: Slackware (period-correct for PII/PIII), Debian 3.x, Red Hat 7-9, or a lightweight modern distro if hardware allows
+- **Distribution: Debian** — period-appropriate options:
+  - Debian 3.1 Sarge (2005) — i386, period-correct for PIII, supports i686
+  - Debian 4.0 Etch (2007) — i386, also supports PIII
+  - Debian 8 Jessie (2015) — last Debian to support pre-i686 CPUs (not relevant for PIII, but reference)
+  - Debian 9 Stretch (2016+) — dropped i486/i586, but PIII is i686 so still supported
+  - Debian 12 Bookworm (2023) — confirmed running on 933MHz PIII by Reddit users; i686 port works on PIII
+  - **Recommendation:** Debian 3.1 Sarge for period correctness, or Debian 12 if you want a usable modern system. PIII is i686, so current Debian i386 port works. The tradeoff is period-accuracy vs. package availability.
+- Debian ISO archive: https://cdimage.debian.org/cdimage/archive/
 
 ---
 
-## 2. Hardware Requirements (TBD — needs user input)
+## 2. Hardware (Confirmed)
 
-The hardware determines what is practical. Key questions:
+| Component | Specification | Notes |
+|---|---|---|
+| CPU | Intel Pentium III (Slot 1) | i686 architecture — supports all current Debian i386 builds |
+| Motherboard | Slot 1 chipset (likely i440BX or i815) | Must verify 48-bit LBA BIOS support for 128GB drive (see below) |
+| RAM | TBD — target 256MB–512MB | BeOS crashes above 1GB. DOS/Win98 do not benefit from >512MB. |
+| Storage | 128GB IDE/PATA hard drive | Within Win98 128GB limit. Verify BIOS supports 48-bit LBA. |
+| GPU | TBD | Period-correct for Win98 gaming (Voodoo 3, TNT2, etc.). BeOS uses VESA fallback. |
+| Sound card | TBD | Sound Blaster compatible for DOS/Win98 |
+| Optical drive | CD/DVD-ROM | For OS install media |
+| BootIt BM | License | Trial first, purchase after verification |
 
-- **CPU/Motherboard era:** Determines max RAM, drive interface (IDE/PATA vs SATA), and which OSes are comfortable
-  - Pentium II/III (Slot 1/Socket 370): ideal for DOS, Win98, BeOS, early Linux, WinXP
-  - Pentium 4 (Socket 478): works for all five but DOS/Win98 need care with speed (CPU too fast for some DOS games)
-  - Athlon XP (Socket A): same considerations as P4
-- **RAM:** 256MB–512MB sweet spot for running all five OSes. BeOS crashes above 1GB. DOS/Win98 do not benefit from >512MB.
-- **Storage:** IDE/PATA drive or IDE-to-SD/IDE-to-CF adapter. 40GB–128GB range. Must stay under 128GB for Win98 compatibility.
-- **GPU:** Period-correct (Voodoo 3, TNT2, Rage 128, etc.) for Win98 gaming. BeOS has limited driver support — VESA fallback works.
-- **Optical drive:** CD-ROM or DVD-ROM for OS installation media. BootIt BM setup media (CD or USB).
+### Critical: 128GB Drive and 48-bit LBA
+
+The 128GB IDE drive is exactly at the 28-bit LBA limit (137.4GB). A Slot 1 motherboard (i440BX era, 1998-2000) may or may not support 48-bit LBA in BIOS. This determines whether the BIOS can see the full 128GB.
+
+**What to check:**
+- Enter BIOS setup and look for the drive auto-detect. If it reports ~128GB (or ~120GB binary), 48-bit LBA is supported.
+- If it reports ~137GB or less, or wraps around, the BIOS lacks 48-bit LBA.
+- i440BX boards with BIOS updates from 2002+ often gained 48-bit LBA support.
+- If the BIOS does NOT support 48-bit LBA: use a BIOS overlay tool (like Ontrack Disk Manager or EZ-Drive) OR install a Promise/Maxtor PCI IDE controller with its own BIOS that supports 48-bit LBA.
+- BootIt BM itself can access drives via direct I/O (bypassing BIOS), but the BIOS must still see the drive at boot.
+
+**Win98 SE note:** Win98 SE does NOT natively support 48-bit LBA. Even with a BIOS that supports it, Win98's IDE driver is limited to 128GB. This is a hard limit — the 128GB drive is exactly at this boundary. It will work, but do not exceed 128GB. rloew's 48-bit LBA patch exists if you ever want to go larger.
+
+**BeOS note:** BeOS R5 uses INT 13h for disk access. It should handle the 128GB drive if the BIOS supports 48-bit LBA. Keep the BeOS partition within the first 8GB for safety.
 
 ---
 
@@ -77,10 +100,10 @@ Drive size assumption: 40GB–128GB (TBD based on hardware). Layout shown with e
 | P0 | EMBRM (0xDF) | — | ~8MB | BootIt BM boot manager | Must be first |
 | P1 | Primary | FAT16 | 1GB | DOS 6.22 | Must be within first 8GB |
 | P2 | Primary | FAT32 | 10GB | Windows 98 SE | Within 128GB limit |
-| P3 | Primary | BFS (0xEB) | 2GB | BeOS R5 | Within first 8GB for safe BIOS access |
+| P3 | Primary | BFS (0xEB) | 2GB | BeOS R5 Pro + Dano 5.1d | Within first 8GB for safe BIOS access |
 | P4 | Primary | NTFS | 20GB | Windows XP | No constraint |
-| P5 | Primary | Ext2/3 | 10GB | Linux | LILO/GRUB in boot sector, not MBR |
-| P6 | Primary | FAT32 | ~37GB | Shared data | Visible from all OSes except DOS (FAT32) |
+| P5 | Primary | Ext3 | 10GB | Debian Linux | GRUB/LILO in boot sector, not MBR |
+| P6 | Primary | FAT32 | ~85GB | Shared data | Visible from Win98, XP, Debian |
 
 ### Boot Items in BootIt BM
 
@@ -88,17 +111,17 @@ Each boot item shows only the target OS partition and the shared data partition.
 
 | Boot Menu Item | Boot Partition | Visible Partitions | Hidden Partitions |
 |---|:---:|---|---|
-| DOS 6.22 | P1 (FAT16) | P1, P6* | P2, P3, P4, P5 |
+| DOS 6.22 | P1 (FAT16) | P1 | P2, P3, P4, P5, P6 |
 | Windows 98 SE | P2 (FAT32) | P2, P6 | P1, P3, P4, P5 |
-| BeOS R5 | P3 (BFS) | P3, P6** | P1, P2, P4, P5 |
+| BeOS R5 Pro (Dano) | P3 (BFS) | P3, P6* | P1, P2, P4, P5 |
 | Windows XP | P4 (NTFS) | P4, P6 | P1, P2, P3, P5 |
-| Linux | P5 (Ext2/3) | P5, P6*** | P1, P2, P3, P4 |
+| Debian Linux | P5 (Ext3) | P5, P6** | P1, P2, P3, P4 |
 
-*P6 is FAT32 — DOS 6.22 cannot read FAT32. DOS will only see P1 as C:. If a DOS-visible data partition is needed, add a small FAT16 partition (512MB) below the 8GB line.
+DOS does not see P6 (FAT32 is invisible to DOS 6.22). User confirmed DOS does not need shared data access.
 
-**BeOS can read FAT32 via its BFS file system add-ons, but BFS is native. P6 visibility optional.
+*BeOS can read FAT32 via BFS add-ons, but BFS is native. P6 visibility optional.
 
-***Linux can read FAT32, NTFS, and Ext2/3. P6 as FAT32 is readable from Linux.
+**Debian can read FAT32, NTFS, and Ext3. P6 as FAT32 is readable from Debian.
 
 ### Optional: DOS-visible data partition
 
@@ -167,17 +190,22 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 4. Install to C: (P2)
 5. After install, remove One Time Option
 
-### Phase 5: Install BeOS R5 (P3)
-1. Create boot item "BeOS R5"
+### Phase 5: Install BeOS R5 Pro + Dano 5.1d (P3)
+1. Create boot item "BeOS R5 Pro"
    - Boot partition: P3
    - Hide: P1, P2, P4, P5
    - Show: P3 (and P6 optionally)
    - One Time Option: boot from CD
-2. Boot the "BeOS R5" item with CD
+2. Boot the "BeOS R5 Pro" item with R5 Pro CD
 3. Use BeOS Drive Setup to initialize P3 with BFS (2KB block size recommended)
-4. Install BeOS to P3
-5. When prompted to install BeOS boot manager (bootman) → **No** (BootIt BM handles booting)
-6. After install, remove One Time Option
+4. Install BeOS R5 Pro to P3
+5. When prompted to install BeOS boot manager (bootman) -> No (BootIt BM handles booting)
+6. After R5 Pro is installed, apply the Dano 5.1d upgrade:
+   - Boot into R5 Pro
+   - Run the Dano 5.1d installer/upgrade over the existing R5 Pro install
+   - Dano replaces the net_server stack with BONE (BeOS Networking Environment)
+   - Reboot and verify BONE is active (Network preferences should show BONE)
+7. After upgrade, remove One Time Option from boot item
 
 ### Phase 6: Install Windows XP (P4)
 1. Create boot item "Windows XP"
@@ -191,20 +219,22 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 5. After install, remove One Time Option
 6. Note: XP may try to write to the MBR. BootIt BM will survive this (it stores boot code in P0). Reboot into BootIt BM to confirm it still loads.
 
-### Phase 7: Install Linux (P5)
-1. Create boot item "Linux"
+### Phase 7: Install Debian Linux (P5)
+1. Create boot item "Debian Linux"
    - Boot partition: P5
    - Hide: P1, P2, P3, P4
    - Show: P5, P6
    - One Time Option: boot from CD
-2. Boot the "Linux" item with CD
+2. Boot the "Debian Linux" item with Debian install CD
 3. During install:
-   - Partition/format P5 as Ext2/3 (or let installer do it)
-   - When asked about boot loader installation → **install to root partition boot sector** (e.g., /dev/hda5), NOT the MBR
-   - Do NOT install GRUB/LILO to /dev/hda or /dev/sda
+   - Partition/format P5 as Ext3 (or let installer do it)
+   - When asked about boot loader installation -> install to root partition boot sector (e.g., /dev/hda5 or /dev/sda5), NOT the MBR
+   - Do NOT install GRUB to /dev/hda or /dev/sda (MBR) — BootIt BM owns the MBR
+   - If using LILO (Debian 3.1 Sarge), same rule: install to root partition, not MBR
 4. Complete install
-5. In BootIt BM, verify the "Linux" boot item points to P5 (where GRUB/LILO is installed)
-6. BootIt BM will chainload to GRUB/LILO on P5, which then boots Linux
+5. In BootIt BM, verify the "Debian Linux" boot item points to P5 (where GRUB/LILO is installed)
+6. BootIt BM will chainload to GRUB/LILO on P5, which then boots Debian
+7. After install, remove One Time Option
 
 ---
 
@@ -221,23 +251,29 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 - **MBR overwrite:** Win98 setup may overwrite the MBR. BootIt BM recovers from P0, but reboot into BootIt BM immediately after install to verify.
 - **Drive letter C:** Win98 expects to be C:. The partition hiding in BootIt BM ensures P2 appears as C: when booted.
 
-### BeOS R5
+### BeOS R5 Pro / Dano 5.1d
 - **1GB RAM limit:** BeOS crashes with more than 1GB RAM. If the machine has >1GB, limit RAM in BIOS or use a BeOS memory limit flag.
 - **Partition type:** BeOS uses BFS (type 0xEB). BootIt BM can create this partition type but you may need to enter 0xEB manually.
 - **Block size:** Use 2KB (2048 byte) block size when formatting BFS. 4KB blocks can trigger bugs.
 - **Decline bootman:** When BeOS offers to install its own boot manager, say No. BootIt BM is the boot manager.
 - **VESA fallback:** BeOS driver support is limited. VESA mode works for most hardware. Expect 16-bit color max on many GPUs.
 - **BIOS access:** BeOS R5 uses INT 13h for disk access. Keep P3 within the first 8GB of the drive for reliable booting.
+- **Dano upgrade:** Install R5 Pro first, then apply Dano 5.1d over it. Dano includes BONE (BeOS Networking Environment) — the improved network stack. The original R5 net_server stack lacks getsockopt and other modern socket calls. Dano was leaked after Be's sale to Palm. Verify BONE is active after upgrade via Network preferences.
+- **Dano compatibility:** Some R5 Pro apps may not work with Dano's BONE stack. Test critical apps after upgrade.
 
 ### Windows XP
 - **MBR overwrite:** XP setup overwrites the MBR. BootIt BM stores its boot code in P0 and can restore itself. Reboot into BootIt BM after XP install to confirm.
 - **NTFS:** XP prefers NTFS. Win98 and DOS cannot read it. The shared data partition (P6) must be FAT32 for cross-OS visibility.
 - **Activation:** XP requires activation. If the hardware changes, reactivation may be needed. Consider using a retail license or volume license key.
 
-### Linux
-- **Bootloader location:** GRUB/LILO must go in the partition boot sector, NOT the MBR. BootIt BM owns the MBR. If the Linux installer overwrites the MBR, BootIt BM can be restored from the setup media.
-- **Disty choice:** For period-correct hardware (PII/PIII), Slackware, Debian 3.x, or Red Hat 7-9 are appropriate. For P4/Athlon XP, slightly newer distros work. Check kernel version for hardware support.
-- **Ext2 vs Ext3:** Ext3 (journaling) is safer. Ext2 is simpler and more period-correct for very old hardware.
+### Debian Linux
+- **Bootloader location:** GRUB/LILO must go in the partition boot sector, NOT the MBR. BootIt BM owns the MBR. If the Debian installer overwrites the MBR, BootIt BM can be restored from the setup media.
+- **Debian version choice:** PIII is i686, so both period-correct and modern Debian i386 builds work:
+  - Debian 3.1 Sarge (2005): Period-correct, uses LILO by default, lighter package set
+  - Debian 12 Bookworm (2023): Modern packages, confirmed working on 933MHz PIII, uses GRUB2
+  - Tradeoff: period accuracy (Sarge) vs. package availability and security updates (Bookworm)
+- **Ext3 vs Ext2:** Ext3 (journaling) is safer against power loss. Ext2 is simpler and more period-correct for Sarge era.
+- **48-bit LBA in Linux:** Linux kernel 2.4+ supports 48-bit LBA natively. The 128GB drive will be fully visible from Debian regardless of which version is chosen.
 
 ### General
 - **EMBR lock-in:** Once EMBR mode is enabled, no other partitioning tool can be used on this drive. Only BootIt BM.
@@ -249,25 +285,31 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 
 ## 6. Open Questions
 
-- [ ] **Hardware:** What motherboard/CPU/RAM/drive will be used? This affects partition sizes, BIOS settings, and which Linux distro is appropriate.
-- [ ] **Linux distro:** Which distribution? Options: Slackware (period-correct), Debian 3.x, Red Hat 7-9, or a lightweight modern distro if hardware allows.
-- [ ] **Drive size:** 40GB? 80GB? 128GB? Affects partition sizing and Win98 compatibility.
-- [ ] **DOS data access:** Do you need DOS 6.22 to see shared data? If yes, add a small FAT16 partition below the 8GB line.
-- [ ] **BeOS version:** R5 Pro or R5 Personal Edition? R5.1d "Dano" (leaked) is the last version. Haiku is the open-source successor but is not BeOS.
-- [ ] **GPU choice:** Affects BeOS driver support and Win98 gaming capability. Voodoo 3 / TNT2 / Rage 128 are period-correct.
+- [ ] **Motherboard model:** Which Slot 1 board? Need to verify 48-bit LBA BIOS support for the 128GB drive. Common i440BX boards (Asus P2B, Abit BE6) may need a BIOS update.
+- [ ] **RAM amount:** How much RAM is installed? BeOS crashes above 1GB.
+- [ ] **Debian version:** Sarge (period-correct) or Bookworm (modern, confirmed on PIII)?
+- [ ] **GPU:** What graphics card? Affects BeOS driver support and Win98 gaming.
+- [ ] **Sound card:** What sound card? DOS/Win98 need Sound Blaster compatibility.
+- [ ] **BeOS Dano source:** Confirm you have the Dano 5.1d upgrade files.
 - [ ] **BootIt BM license:** Purchase after the 30-day trial confirms the setup works on the target hardware.
 
 ---
 
-## 7. Bill of Materials (TBD)
+## 7. Bill of Materials
 
-| Component | Specification | Notes |
-|---|---|---|
-| Motherboard | TBD | Must be BIOS (not UEFI-only) |
-| CPU | TBD | PII/PIII ideal for period correctness |
-| RAM | TBD | 256MB–512MB sweet spot; BeOS crashes >1GB |
-| Storage | TBD | IDE/PATA or IDE-to-SD adapter, 40–128GB |
-| GPU | TBD | Period-correct for Win98 gaming |
-| Sound card | TBD | Sound Blaster compatible for DOS/Win98 |
-| Optical drive | CD/DVD-ROM | For OS install media |
-| BootIt BM | License | Trial first, purchase after verification |
+| Component | Specification | Status | Notes |
+|---|---|---|---|
+| CPU | Intel Pentium III (Slot 1) | Confirmed | i686 architecture |
+| Motherboard | Slot 1 chipset (i440BX or i815) | TBD — need model | Verify 48-bit LBA BIOS support |
+| RAM | 256MB–512MB target | TBD | BeOS crashes >1GB |
+| Storage | 128GB IDE/PATA hard drive | Confirmed | At Win98 128GB limit boundary |
+| GPU | Period-correct (TBD) | TBD | Voodoo 3 / TNT2 / Rage 128 for Win98 + BeOS VESA |
+| Sound card | Sound Blaster compatible (TBD) | TBD | For DOS/Win98 audio |
+| Optical drive | CD/DVD-ROM | TBD | For OS install media |
+| BootIt BM | License (trial first) | Needed | 30-day trial, then purchase |
+| DOS 6.22 | Install media | Needed | Floppy disks or CD |
+| Windows 98 SE | Install media | Needed | Boot floppy + CD |
+| BeOS R5 Pro | Install media | Needed | CD |
+| BeOS Dano 5.1d | Upgrade files | Needed | Applied over R5 Pro |
+| Windows XP | Install media | Needed | CD + license key |
+| Debian Linux | Install CD | Needed | Sarge 3.1 or Bookworm 12 |
