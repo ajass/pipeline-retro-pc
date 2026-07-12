@@ -218,12 +218,55 @@ Use nLite to create a custom Server 2003 R2 ISO before installation:
 
 ---
 
-## Conversion Utilities (Historical)
+## Conversion Utilities
 
-| Tool | What It Does | Status |
-|---|---|---|
-| nLite | Pre-install ISO customization, component removal, service config | Available, works with Server 2003 |
-| Server 2003 Workstation .exe | Quick registry toggle for common workstation settings | Linked on overclock.net (500KB) |
-| xpconv.zip | Server-to-XP conversion pack | Linked on windowsxlive.net |
-| The Windows Workstation Project | GitHub project, community conversion guides for Server 2003/2008/2016-2019 | github.com/pauljrowland/TheWindowsWorkstationProject |
-| MSFN win2k3 guide | Comprehensive walkthrough at win2k3.msfn.org | Archive may be offline; MSFN board has threads |
+### Windows Server 2003 - XP Conversion Pack (xpconv) — RECOMMENDED
+
+GUI application by Windows X (MSFN community member), released March 2006.
+
+**What it is:** A single GUI exe (2.4MB) with a tabbed interface and checkboxes. Runs on the Server 2003 machine after install. Handles the entire workstation conversion through a visual interface — no registry editing, no services.msc, no gpedit.msc.
+
+**Download:**
+https://web.archive.org/web/20060408131011if_/http://files.tcmagazine.info/windowsx/shrine/xpconv/xpconv.zip
+
+Extract xpconv.zip to get xpconv.exe. Run it on the Server 2003 machine after installing SP1.
+
+**What it converts through the GUI:**
+
+Server security configuration:
+- IE Enhanced Security Configuration (disable)
+- Shutdown Event Tracker (disable)
+- Error reporting (disable)
+- Ctrl+Alt+Del requirement on startup (disable)
+- Drive auto-mounting (configure)
+
+Features configuration:
+- Manage Your Server logon window (disable)
+- Processor scheduling (switch to Programs)
+- Windows Update (configure)
+- Firewall (configure)
+- Start Menu items (configure)
+
+Services configuration:
+- Themes (enable/disable)
+- CD-Burning (enable)
+- Windows Image Acquisition / WIA (enable)
+- Multimedia support and DirectX acceleration (enable)
+- Visual effects (configure)
+
+XP missing stuff (add back to Server 2003):
+- User accounts in Control Panel
+- Classic games (Solitaire, Minesweeper, etc.)
+- System Restore
+- Shell services (logon UI, fast user switching, progress dialog, user picture)
+
+**Key features:**
+1. Apply full conversion — makes Server 2003 behave as close to XP Professional as possible
+2. Undo conversion — revert to original Server 2003 defaults (selectively or all)
+3. Convert a Server 2003 CD to an XP-style CD (pre-install ISO customization)
+
+**Requirements:** Server 2003 with SP1 installed. Works on both Server 2003 and Server 2003 R2.
+
+### nLite (Pre-Install Alternative)
+
+nLite 1.4.9.3 can also perform the conversion pre-install by stripping server components and pre-configuring services. See nlite-configuration-guide.md. nLite is better if you want a custom ISO with components removed. xpconv is better if you want a quick post-install conversion with a GUI and undo capability.
