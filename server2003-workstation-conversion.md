@@ -173,21 +173,38 @@ Server 2003 does not run 16-bit DOS apps well. Replace AUTOEXEC.NT:
 
 ---
 
-## nLite Pre-Install Strip (Alternative to Manual Steps)
+## nLite Pre-Install Strip (Recommended for Lightest Result)
 
-If you want the lightest possible install, use nLite to create a custom Server 2003 ISO:
+Use nLite to create a custom Server 2003 R2 ISO before installation:
 
-1. Download nLite (free, requires .NET Framework 2.0+)
-2. Copy Server 2003 CD to a folder
-3. nLite workflow:
-   - Import the CD contents
-   - Slipstream Service Pack 2 (if not already integrated)
+### nLite Version
+
+**nLite 1.4.9.3** — the final release (August 29, 2013) by Dino Nuhagic (nuhi). This is the only version to use for Server 2003 R2.
+
+- Supports Windows 2000, XP, and Server 2003 (x86 and x64)
+- Requires .NET Framework 2.0+ on the machine running nLite (your modern PC, not the retro PC)
+- Free download: MajorGeeks, Softpedia, etc.
+- Do NOT use NTLite — it targets Windows 7+ and does not support Server 2003
+- Earlier nLite versions (1.4.7.x, 1.4.8.x) work but have bugs fixed in 1.4.9.3
+
+### nLite Workflow
+
+1. Download and install nLite 1.4.9.3 on a modern Windows machine
+2. Copy Server 2003 R2 Disc 1 contents to a folder on your modern PC
+3. Optionally download Server 2003 SP2 standalone installer to slipstream
+4. In nLite:
+   - Point it at the Disc 1 folder (I386 install source)
+   - Slipstream Service Pack 2 (if Disc 1 is SP1 and you have SP2)
    - Remove Components: IIS, server management tools, MSN Explorer, Windows Messenger, extra drivers you don't need
    - Unattended Setup: pre-fill product key, create user, skip activation prompts
-   - Services: pre-configure the services listed in Step 10
-   - Tweaks: set performance to Programs, disable IE Enhanced Security, enable DirectX
-4. Burn the custom ISO
-5. Install from it — most conversion steps are already done
+   - Services: pre-configure the services listed in Step 10 (disable server services, enable audio)
+   - Tweaks: set performance to Programs, disable IE Enhanced Security, enable DirectX/hardware acceleration
+5. Build a bootable ISO from the customized install
+6. Burn the ISO to CD or write to USB
+
+### What nLite Cannot Do
+- Does not process R2 Disc 2 (the R2 features disc). Since Disc 2 is optional for workstation use, this is not an issue.
+- Does not install BONE, BeOS, or any non-Microsoft software. Only customizes the Windows install media.
 
 ---
 
