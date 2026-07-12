@@ -36,14 +36,16 @@ Each OS has era-specific limitations that constrain partition layout, drive size
 - Position constraint: ideally within first 8GB for safest BIOS access (BeOS R5 uses INT 13h)
 - **BONE install:** Install BeOS R5 Pro first, then install the BONE (BeOS Networking Environment) package on top of R5 Pro. BONE is the improved network stack from the Dano codebase, but can be installed without upgrading the entire OS to Dano 5.1d. The original R5 net_server stack is poor (missing getsockopt, etc.). BONE replaces it with the newer Dano-era networking stack while keeping R5 Pro as the base OS.
 
-### Windows Server 2003 (converted to gaming workstation)
+### Windows Server 2003 R2 (converted to gaming workstation)
 - Filesystem: NTFS (recommended) or FAT32
 - Can be installed on a primary partition
 - Uses NTLDR/BOOT.INI boot mechanism (same as XP — NT 5.2 kernel)
 - No cylinder/size limit with SP2+
 - Can read FAT16, FAT32, NTFS
+- **Edition confirmed:** 2-disc R2 release. Disc 1 = Server 2003 SP1 (this is the base OS to install and convert). Disc 2 = R2 features (ADFS, MMC 3.0, DFS, Virtual Server 2005, Services for UNIX). Disc 2 is server-oriented — skip it for the workstation build, or install only if you want updated MMC and .NET Framework 2.0.
 - **Why Server 2003 instead of XP:** NT 5.2 kernel, leaner than XP, runs better on 500MHz/256MB. Stripped of consumer bloat (Luna, System Restore, Fast User Switching). More stable. See server2003-workstation-conversion.md for full conversion guide.
 - **Conversion required:** Post-install or via nLite pre-install. Enable audio, DirectX, hardware acceleration. Disable IE Enhanced Security, shutdown event tracker, server services. See server2003-workstation-conversion.md.
+- **Recommendation:** Use Standard Edition (32-bit, IA-32). Supports 4 CPUs and 4GB RAM. Most commonly available, best documented for workstation conversion.
 
 ### Linux (Debian)
 - Filesystem: Ext2/3/4, ReiserFS, etc.
@@ -103,7 +105,7 @@ Drive size assumption: 40GB–128GB (TBD based on hardware). Layout shown with e
 | P1 | Primary | FAT16 | 1GB | DOS 6.22 | Must be within first 8GB |
 | P2 | Primary | FAT32 | 10GB | Windows 98 SE | Within 128GB limit |
 | P3 | Primary | BFS (0xEB) | 2GB | BeOS R5 Pro + BONE | Within first 8GB for safe BIOS access |
-| P4 | Primary | NTFS | 20GB | Win Server 2003 (workstation) | No constraint |
+| P4 | Primary | NTFS | 20GB | Win Server 2003 R2 (workstation) | No constraint |
 | P5 | Primary | Ext3 | 10GB | Debian Linux | GRUB/LILO in boot sector, not MBR |
 | P6 | Primary | FAT32 | ~85GB | Shared data | Visible from Win98, XP, Debian |
 
@@ -116,7 +118,7 @@ Each boot item shows only the target OS partition and the shared data partition.
 | DOS 6.22 | P1 (FAT16) | P1 | P2, P3, P4, P5, P6 |
 | Windows 98 SE | P2 (FAT32) | P2, P6 | P1, P3, P4, P5 |
 | BeOS R5 Pro (BONE) | P3 (BFS) | P3, P6* | P1, P2, P4, P5 |
-| Win Server 2003 | P4 (NTFS) | P4, P6 | P1, P2, P3, P5 |
+| Win Server 2003 R2 | P4 (NTFS) | P4, P6 | P1, P2, P3, P5 |
 | Debian Linux | P5 (Ext3) | P5, P6** | P1, P2, P3, P4 |
 
 DOS does not see P6 (FAT32 is invisible to DOS 6.22). User confirmed DOS does not need shared data access.
@@ -209,16 +211,17 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
    - Reboot and verify BONE is active (Network preferences should reflect the new stack)
 7. After BONE install, remove One Time Option from boot item
 
-### Phase 6: Install Windows Server 2003 (P4)
-1. Create boot item "Win Server 2003"
+### Phase 6: Install Windows Server 2003 R2 (P4)
+1. Create boot item "Win Server 2003 R2"
    - Boot partition: P4
    - Hide: P1, P2, P3, P5
    - Show: P4, P6
    - One Time Option: boot from CD
-2. Boot the "Win Server 2003" item with CD
+2. Boot the "Win Server 2003 R2" item with Disc 1 (Server 2003 SP1)
 3. Server 2003 setup should see P4 as unpartitioned space — format as NTFS
 4. Install to P4 (will appear as C:)
-5. After install, perform the workstation conversion (see server2003-workstation-conversion.md):
+5. Disc 2 (R2 features) is optional — skip it for workstation use, or install only if you want updated MMC and .NET Framework 2.0
+6. After install, perform the workstation conversion (see server2003-workstation-conversion.md):
    - Disable IE Enhanced Security Configuration
    - Disable Shutdown Event Tracker
    - Enable Windows Audio service
@@ -227,8 +230,8 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
    - Disable unnecessary server services (see conversion guide)
    - Install DirectX 9.0c
    - Install GPU/sound/chipset drivers (XP drivers work)
-6. After conversion, remove One Time Option
-7. Note: Server 2003 may try to write to the MBR. BootIt BM will survive this (it stores boot code in P0). Reboot into BootIt BM to confirm it still loads.
+7. After conversion, remove One Time Option
+8. Note: Server 2003 R2 may try to write to the MBR. BootIt BM will survive this (it stores boot code in P0). Reboot into BootIt BM to confirm it still loads.
 
 ### Phase 7: Install Debian Linux (P5)
 1. Create boot item "Debian Linux"
@@ -272,14 +275,15 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 - **BONE install:** Install BONE on top of R5 Pro (not a full Dano upgrade). BONE replaces the original net_server stack with the improved Dano-era networking stack. The original R5 net_server stack lacks getsockopt and other modern socket calls. Verify BONE is active after install via Network preferences.
 - **BONE compatibility:** Some R5 Pro apps may not work with BONE. Test critical apps after install. BONE changes the networking layer, which can affect older network utilities.
 
-### Windows Server 2003 (workstation)
-- **MBR overwrite:** Server 2003 setup overwrites the MBR. BootIt BM stores its boot code in P0 and can restore itself. Reboot into BootIt BM after install to confirm.
-- **NTFS:** Server 2003 prefers NTFS. Win98 and DOS cannot read it. The shared data partition (P6) must be FAT32 for cross-OS visibility.
-- **Activation:** Server 2003 requires activation. Retail or volume license keys work.
+### Windows Server 2003 R2 (workstation)
+- **MBR overwrite:** Server 2003 R2 setup overwrites the MBR. BootIt BM stores its boot code in P0 and can restore itself. Reboot into BootIt BM after install to confirm.
+- **NTFS:** Server 2003 R2 prefers NTFS. Win98 and DOS cannot read it. The shared data partition (P6) must be FAT32 for cross-OS visibility.
+- **Activation:** Server 2003 R2 requires activation. Retail or volume license keys work.
+- **R2 disc 2:** Optional for workstation use. Skip it unless you need .NET Framework 2.0 or updated MMC.
 - **Game installers:** Some games refuse to install on Server 2003 (OS version check). Use compatibility mode (Windows XP) or edit the MSI LaunchCondition table. See server2003-workstation-conversion.md Step 11.
 - **16-bit apps:** NTVDM support is present but may need AUTOEXEC.NT replacement. See conversion guide Step 12.
 - **NVIDIA drivers:** May not auto-detect Server 2003. Install XP drivers, then manually add the card through Device Manager > Update Driver > Have Disk.
-- **Performance:** After conversion, Server 2003 will run lighter than XP on 500MHz/256MB. Keep Classic theme (not Luna) for maximum performance.
+- **Performance:** After conversion, Server 2003 R2 will run lighter than XP on 500MHz/256MB. Keep Classic theme (not Luna) for maximum performance.
 
 ### Debian Linux
 - **Bootloader location:** GRUB/LILO must go in the partition boot sector, NOT the MBR. BootIt BM owns the MBR. If the Debian installer overwrites the MBR, BootIt BM can be restored from the setup media.
@@ -326,5 +330,5 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 | Windows 98 SE | Install media | Needed | Boot floppy + CD |
 | BeOS R5 Pro | Install media | Needed | CD |
 | BeOS BONE | Network stack package | Needed | Installed on top of R5 Pro |
-| Win Server 2003 | Install media + license | Needed | CD + license key, convert to workstation post-install |
+| Win Server 2003 R2 | 2-disc set + license | Confirmed | Disc 1 = SP1 base install, Disc 2 = R2 features (optional). Convert to workstation post-install. |
 | Debian Linux | Install CD | Needed | Sarge 3.1 or Bookworm 12 |
