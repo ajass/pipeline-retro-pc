@@ -19,7 +19,9 @@ Server 2003 (NT 5.2) shares the XP codebase but ships with a different component
 - No XP Tour
 - No MSN Explorer (in most Server 2003 editions)
 
-Do NOT follow XP nLite removal guides for Server 2003. The component tree is different. This guide covers what nLite actually presents for Server 2003.
+Do NOT follow XP nLite removal guides for Server 2003. The component tree is different.
+
+**Disclaimer:** The component names below come from the Server 2003 Windows Components Wizard categories (sysoc.inf). nLite may display slightly different names or groupings. When in doubt, check the nLite description for each component before removing it. If you are unsure what something does, leave it in.
 
 ---
 
@@ -53,36 +55,37 @@ The only driver integration that may be necessary is a mass storage / IDE contro
 
 ## Part 2: What to Remove
 
-nLite's component tree for Server 2003 is server-oriented. The goal is to remove server-specific components while keeping everything needed for gaming and multimedia.
-
 ### Server Components — REMOVE
 
-These are the components that make Server 2003 a server and are useless for a gaming workstation:
+These are the optional server features that appear in the Server 2003 Windows Components Wizard. They are what make Server 2003 a server and are useless for a gaming workstation.
 
-| Component | Why Remove |
+| Component | Subcomponents | Why Remove |
+|---|---|---|
+| Internet Information Services (IIS) | WWW Service, FTP Service, SMTP Service, NNTP Service, IIS Manager, IIS Common Files, BITS Server Extension | Web/FTP/mail/news server. None needed for gaming. |
+| Certificate Services | CA, Web Enrollment Support | PKI / Certificate Authority. Not needed. |
+| E-mail Services | POP3 Service, POP3 Service Web Administration | Built-in POP3 mail server. Not needed. |
+| Fax Services | Fax Service, Fax Console | Fax server. Not needed. |
+| Indexing Service | — | Filesystem indexing service. Consumes resources. Not needed for gaming. |
+| Management and Monitoring Tools | WMI SNMP Provider, Network Monitor | SNMP monitoring and packet capture. Not needed. |
+| Message Queuing (MSMQ) | Active Directory Integration, Common, HTTP Support, Triggers, Routing | Enterprise messaging. Not needed. |
+| Other Network File and Print Services | File Server for Macintosh, Print Server for Macintosh, File and Print Services for NetWare | Macintosh/NetWare interoperability. Not needed. |
+| Remote Installation Services (RIS) | — | PXE boot / OS deployment. Not needed. |
+| Terminal Server | — | Application-mode terminal services (NOT Remote Desktop for Administration, which stays). Full multi-session terminal server. Not needed. |
+| Windows Media Services | Windows Media Services, Windows Media Services Admin | Streaming media SERVER (not Windows Media Player). Not needed. |
+| UDDI Services | UDDI Services, UDDI Services Web | Universal Description, Discovery and Integration registry. Not needed. |
+| Windows Services for UNIX | (if present from R2 Disc 2) | UNIX interoperability. Not needed. |
+| Telnet Client | — | Not needed. |
+| Telnet Server | — | Not needed. |
+| Fax | — | Duplicate of Fax Services above if shown separately. Remove. |
+| Update Root Certificates | — | Auto-downloads root CA certificates. Not needed if not using Windows Update online. Can remove. |
+
+### Server Components — KEEP
+
+| Component | Why Keep |
 |---|---|
-| Internet Information Services (IIS) | Web/FTP server. Not needed. |
-| IIS Common Files | IIS support files. |
-| IIS Manager | IIS administration tool. |
-| SMTP Service | Mail server. Not needed. |
-| FTP Service | FTP server. Not needed. |
-| NNTP Service | News server. Not needed. |
-| World Wide Web Service | HTTP server. Not needed. |
-| Active Directory Services | Domain controller. Not needed on workstation. |
-| Certificate Services | PKI / CA. Not needed. |
-| Remote Installation Services (RIS) | PXE boot / OS deployment. Not needed. |
-| Windows File Services / DFS | Distributed filesystem. Not needed. |
-| Terminal Server | Application mode terminal services (not Remote Desktop for Administration). |
-| Microsoft Message Queue (MSMQ) | Message queuing. Not needed. |
-| Windows Media Services | Streaming media server. Not needed. |
-| UDDI Services | Universal Description, Discovery and Integration. Not needed. |
-| Windows Services for UNIX | Interoperability with UNIX. Not needed. |
-| WMI SNMP Provider | SNMP monitoring. Not needed. |
-| Fax Service | Fax server. Not needed. |
-| Telnet Client | Not needed. |
-| Telnet Server | Not needed. |
-| Windows Management Instrumentation (WMI) | Keep this — many tools depend on it. Do NOT remove. |
-| Manage Your Server | Server configuration wizard. Removed via tweaks, not component removal. |
+| Remote Desktop for Administration | This is NOT Terminal Server. It allows 2 concurrent RDP sessions for remote administration. Keep if you want remote access. It is a lightweight feature, not a removable server component. |
+| Windows Management Instrumentation (WMI) | Many tools and installers depend on WMI. Do NOT remove. nLite may show this as a component — keep it. |
+| Background Intelligent Transfer Service (BITS) | If you plan to use Windows Update, BITS is required. Keep it. If you will never update online, can remove. |
 
 ### Network Components — REMOVE (Server-Specific)
 
@@ -90,9 +93,7 @@ These are the components that make Server 2003 a server and are useless for a ga
 |---|---|
 | Client for NetWare Networks | No Novell network. |
 | Gateway Service for NetWare | No Novell gateway. |
-| IP Security (IPSec) | Not needed for workstation. |
-| Simple TCP/IP Services | Echo/discard — not needed. |
-| Network Monitor | Packet capture. Not needed. |
+| Simple TCP/IP Services | Echo/discard/daytime/quote. Not needed. |
 | Connection Manager Administration Kit | VPN profile builder. Not needed. |
 
 ### Network Components — KEEP
@@ -102,15 +103,16 @@ These are the components that make Server 2003 a server and are useless for a ga
 | Internet Explorer | Required for Windows Update and many installers. |
 | Internet Explorer Core | Critical. Many services depend on it including activation. Do NOT remove. |
 | TCP/IP | Required for networking. |
-| Ethernet (LAN) drivers | Required. |
-| File and Printer Sharing | Keep if you want to share files. Remove if not. |
+| Ethernet (LAN) drivers | Required for networking. |
+| File and Printer Sharing | Keep if you want to share files on the network. Remove if not. |
 | Client for Microsoft Networks | Keep. Needed for workgroup access. |
 | Remote Desktop | Keep if you want RDP access to the machine. |
 | Dial-up and VPN | Keep if using. Remove if not. |
+| DHCP / DNS / WINS | These are subcomponents under Networking Services. If you see them, remove — you are not running a DNS/DHCP server. But check whether any are required by your network before removing. |
 
 ### Drivers — REMOVE (Hardware Not Present)
 
-These are generic Windows drivers for hardware you do not have. Remove them.
+These are generic Windows drivers for hardware you do not have. nLite may group these differently for Server 2003 — check descriptions before removing.
 
 | Component | Why Remove |
 |---|---|
@@ -126,7 +128,7 @@ These are generic Windows drivers for hardware you do not have. Remove them.
 | Smartcards | No smartcard reader. |
 | Sound Controllers | You will install Sound Blaster drivers manually. |
 | Tape Drives | No tape drives. |
-| Wireless Ethernet (WLAN) | No wireless on Slot 1 PIII. |
+| Wireless Ethernet (WLAN) | No wireless on Slot 1 PIII. Install manually if you add a WiFi card later. |
 | Sony Memory Stick | No Memory Stick hardware. |
 | Gravis Digital Game Port | No Gravis gameport. |
 | Serial Pen Tablet | No tablet. |
@@ -206,7 +208,7 @@ Server 2003 does not ship with the consumer multimedia bloat that XP has. What i
 | Component | Why Remove |
 |---|---|
 | Luna Theme | XP visual style engine. Not present on Server 2003 by default. If nLite offers it, remove it. Classic theme only for performance. |
-| Mouse Cursors | Extra cursor themes (3D, bronze, etc.). Keep default white. |
+| Mouse Cursors | Extra cursor themes (3D, bronze, etc.). Keep default. |
 | Music Samples | Useless sample audio. |
 | Movie Maker | Not present on Server 2003. If it appears, remove. |
 | Speech Support | Not needed for gaming. |
@@ -374,8 +376,6 @@ After installing from the nLite-customized ISO:
 
 ---
 
-## Summary
+## Alternative: xpconv GUI Tool (Post-Install)
 
-The Server 2003 nLite strategy is the inverse of XP. XP guides strip consumer bloat (MSN, Messenger, Tour, Pinball, screensavers). Server 2003 does not have those. Instead, you strip server infrastructure (IIS, Active Directory, DFS, Certificate Services, RIS, MSMQ, Media Services, Telnet) and configure server services to workstation defaults (disable server services, enable audio, switch performance to Programs).
-
-The multimedia stack (DirectX, OpenGL, codecs, MIDI, WMP) must be kept — it is what enables gaming. The network stack (IE, TCP/IP, Ethernet, Client for Microsoft Networks) must be kept — it is needed for updates and file transfer.
+Instead of (or in addition to) nLite, you can use the Windows Server 2003 - XP Conversion Pack (xpconv) — a GUI application that handles the post-install conversion with checkboxes and an undo feature. See server2003-workstation-conversion.md for details and download link.
