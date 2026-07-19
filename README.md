@@ -11,5 +11,6 @@
 
 - [PROJECT.md](PROJECT.md) — Full project plan: hardware requirements, partition layout, install sequence, boot config, pitfalls
 - [bootit-bm-research.md](bootit-bm-research.md) — BootIt Bare Metal feature analysis and capability research
+- [bootit-bm-manual-reference.md](bootit-bm-manual-reference.md) — Manual study: settings, UI layout, procedures, pitfalls for this build
 - [server2003-workstation-conversion.md](server2003-workstation-conversion.md) — Step-by-step guide for converting Server 2003 to a gaming workstation
 - [nlite-configuration-guide.md](nlite-configuration-guide.md) — Detailed nLite settings: what to integrate, remove, and configure for a lean Server 2003 gaming OS

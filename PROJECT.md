@@ -272,8 +272,12 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 ### General
 - **EMBR lock-in:** Once EMBR mode is enabled, no other partitioning tool can be used on this drive. Only BootIt BM.
 - **Install order:** Oldest first (Win98), newest last (Debian). This minimizes MBR conflicts.
+- **Use New Windows MBR setting — DISABLE:** BootIt BM defaults to Vista+ MBR code. The manual warns this "will continue to boot older OSes with the exception of some (rare) configurations using Win9x on FAT32." Since Win98 SE is on FAT32 in this build, disable Use New Windows MBR in Settings after install. If Win98 won't boot, boot the setup media → Partition Work → View MBR → Std MBR to write the old standard MBR code.
+- **Fix Swap setting — keep OFF:** Enabling causes Win9x to run in compatibility mode. Single-drive build, no swapping needed.
+- **Align on 1MiB Boundaries — keep OFF:** For SSDs, not PATA/IDE drives. Cylinder alignment is correct for this hardware.
 - **BIOS settings:** Set IDE mode to Legacy/LBA. Disable AHCI if the hardware supports it (retro OSes prefer legacy IDE mode). If using SATA via adapter, ensure BIOS presents drives in legacy mode.
 - **Back up before starting:** Create a disk image of the entire drive after each OS install using BootIt BM's built-in Image for DOS. This gives recovery points.
+- **Reactivate after OS install:** Win95/98 and Server 2003 deactivate BootIt BM by overwriting the MBR. This is expected — boot the setup media → Installation & Recovery Boot Menu → Reactivate BootIt Bare Metal. No reinstall needed.
 
 ---
 
