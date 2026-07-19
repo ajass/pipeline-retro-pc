@@ -2,7 +2,9 @@
 
 **Created:** 2026-07-09
 **Status:** Planning — hardware confirmed, partition layout and install sequence defined
-**Goal:** Multi-boot DOS 6.22, Windows 98 SE, BeOS R5 Pro (with BONE network stack), Windows Server 2003 (converted to gaming workstation), and Debian Linux from a single 128GB IDE drive using BootIt Bare Metal
+**Goal:** Multi-boot Windows 98 SE (with DOS 7.1 for DOS gaming), BeOS R5 Pro (with BONE network stack), Windows Server 2003 (converted to gaming workstation), and Debian Linux from a single 128GB IDE drive using BootIt Bare Metal
+
+**Note on DOS:** Standalone DOS 6.22 install dropped. DOS gaming uses DOS 7.1 built into Windows 98 SE (F8 → "Command Prompt Only" or "Restart in MS-DOS Mode"). DOS 7.1 supports FAT32 and LFN, unlike DOS 6.22.
 
 ---
 
@@ -10,20 +12,18 @@
 
 Each OS has era-specific limitations that constrain partition layout, drive size, and install order.
 
-### DOS 6.22
-- Filesystem: FAT16 only (max 2GB per partition)
-- Cannot access FAT32 or NTFS
-- Cannot access partitions beyond 8GB cylinder boundary
-- Must be installed on a primary partition within first 8GB of the drive
-- Boot files (IO.SYS, MSDOS.SYS, COMMAND.COM) must be in first clusters of C:
-
-### Windows 98 SE
+### Windows 98 SE (with DOS 7.1)
 - Filesystem: FAT16 or FAT32
 - 128GB drive size limit (without patched drivers like rloew's)
 - Cannot read/write NTFS natively (read-only via third-party drivers)
 - Needs a primary partition (or a logical volume with boot files on a FAT16/FAT32 primary)
 - Windows 9x boots from C: — its boot files land on the active primary partition
-- Supports real-mode DOS for gaming (DOS 7.1 built in)
+- **DOS gaming via DOS 7.1 (built into Win98 SE):** No standalone DOS partition.
+  - Access via F8 → "Command Prompt Only" at boot, or "Restart in MS-DOS Mode" from within Windows
+  - DOS 7.1 supports FAT32 and long filenames (LFN) — unlike DOS 6.22 which was FAT16-only
+  - Real-mode DOS driver support (CD-ROM, mouse, sound) via CONFIG.SYS / AUTOEXEC.BAT
+  - Same DOS game compatibility as standalone DOS 6.22 for the vast majority of titles
+  - For edge cases requiring true MS-DOS 6.22 behavior, use a boot floppy or image
 
 ### BeOS R5 Pro (with BONE network stack)
 - Filesystem: BFS (Be File System) — native, journaling, 64-bit capable
@@ -95,19 +95,18 @@ The 128GB IDE drive is exactly at the 28-bit LBA limit (137.4GB). A Slot 1 mothe
 
 ## 3. Partition Layout (Single Drive)
 
-Requires EMBR mode in BootIt BM (more than 4 primary partitions needed: BootIt partition + 5 OS partitions + 1 data partition = 7 total).
+Requires EMBR mode in BootIt BM (more than 4 primary partitions needed: BootIt partition + 4 OS partitions + 1 data partition = 6 total).
 
-Drive size assumption: 40GB–128GB (TBD based on hardware). Layout shown with example 80GB drive.
+Drive size assumption: 128GB IDE/PATA drive (confirmed).
 
 | Partition | Type | FS | Size | Purpose | Position Constraint |
 |:---:|:---:|:---:|:---:|---|---|
 | P0 | EMBRM (0xDF) | — | ~8MB | BootIt BM boot manager | Must be first |
-| P1 | Primary | FAT16 | 1GB | DOS 6.22 | Must be within first 8GB |
-| P2 | Primary | FAT32 | 10GB | Windows 98 SE | Within 128GB limit |
-| P3 | Primary | BFS (0xEB) | 2GB | BeOS R5 Pro + BONE | Within first 8GB for safe BIOS access |
-| P4 | Primary | NTFS | 20GB | Win Server 2003 R2 (workstation) | No constraint |
-| P5 | Primary | Ext3 | 10GB | Debian Linux | GRUB/LILO in boot sector, not MBR |
-| P6 | Primary | FAT32 | ~85GB | Shared data | Visible from Win98, XP, Debian |
+| P1 | Primary | FAT32 | 10GB | Windows 98 SE + DOS 7.1 | Within 128GB limit |
+| P2 | Primary | BFS (0xEB) | 2GB | BeOS R5 Pro + BONE | Within first 8GB for safe BIOS access |
+| P3 | Primary | NTFS | 20GB | Win Server 2003 R2 (workstation) | No constraint |
+| P4 | Primary | Ext3 | 10GB | Debian Linux | GRUB/LILO in boot sector, not MBR |
+| P5 | Primary | FAT32 | ~86GB | Shared data | Visible from Win98, Server 2003, Debian |
 
 ### Boot Items in BootIt BM
 
@@ -115,28 +114,14 @@ Each boot item shows only the target OS partition and the shared data partition.
 
 | Boot Menu Item | Boot Partition | Visible Partitions | Hidden Partitions |
 |---|:---:|---|---|
-| DOS 6.22 | P1 (FAT16) | P1 | P2, P3, P4, P5, P6 |
-| Windows 98 SE | P2 (FAT32) | P2, P6 | P1, P3, P4, P5 |
-| BeOS R5 Pro (BONE) | P3 (BFS) | P3, P6* | P1, P2, P4, P5 |
-| Win Server 2003 R2 | P4 (NTFS) | P4, P6 | P1, P2, P3, P5 |
-| Debian Linux | P5 (Ext3) | P5, P6** | P1, P2, P3, P4 |
+| Windows 98 SE | P1 (FAT32) | P1, P5 | P2, P3, P4 |
+| BeOS R5 Pro (BONE) | P2 (BFS) | P2, P5* | P1, P3, P4 |
+| Win Server 2003 R2 | P3 (NTFS) | P3, P5 | P1, P2, P4 |
+| Debian Linux | P4 (Ext3) | P4, P5** | P1, P2, P3 |
 
-DOS does not see P6 (FAT32 is invisible to DOS 6.22). User confirmed DOS does not need shared data access.
+*BeOS can read FAT32 via BFS add-ons, but BFS is native. P5 visibility optional.
 
-*BeOS can read FAT32 via BFS add-ons, but BFS is native. P6 visibility optional.
-
-**Debian can read FAT32, NTFS, and Ext3. P6 as FAT32 is readable from Debian.
-
-### Optional: DOS-visible data partition
-
-If you want DOS 6.22 to access shared data, add a FAT16 partition (max 2GB) within the first 8GB:
-
-| Partition | Type | FS | Size | Purpose |
-|:---:|:---:|:---:|:---:|---|
-| P6a | Primary | FAT16 | 2GB | DOS-shared data (within 8GB limit) |
-| P6b | Primary | FAT32 | ~35GB | Win98/XP/Linux shared data |
-
-This would make 8 partitions total — still fine with EMBR mode.
+**Debian can read FAT32, NTFS, and Ext3. P5 as FAT32 is readable from Debian.
 
 ---
 
@@ -148,11 +133,10 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 1. Back up any existing data on the drive (if not blank)
 2. Create BootIt BM setup media (floppy/CD/USB) using MakeDisk on a modern machine
 3. Create OS installation media:
-   - DOS 6.22 boot floppy + install disks
    - Windows 98 SE boot floppy + CD
-   - BeOS R5 CD (or boot floppy + CD)
-   - Windows XP install CD
-   - Linux install CD/floppies (distro-dependent)
+   - BeOS R5 Pro CD (or boot floppy + CD)
+   - Windows Server 2003 R2 Disc 1 (SP1 base) + Disc 2 (optional)
+   - Debian install CD
 4. Set BIOS to boot from the BootIt BM media first
 
 ### Phase 1: Install BootIt BM
@@ -165,44 +149,34 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 ### Phase 2: Create All Partitions
 1. Boot into BootIt BM desktop
 2. Open Partition Work
-3. Create P1: FAT16, 1GB (DOS 6.22)
-4. Create P2: FAT32, 10GB (Windows 98 SE)
-5. Create P3: BFS/0xEB, 2GB (BeOS R5) — may need to enter partition type manually
-6. Create P4: NTFS, 20GB (Windows XP) — format can happen during XP install
-7. Create P5: Ext2/3, 10GB (Linux) — format can happen during Linux install
-8. Create P6: FAT32, remaining space (shared data)
-9. Do NOT format P3, P4, P5 yet — let each OS installer format its own partition to avoid filesystem creation quirks
+3. Create P1: FAT32, 10GB (Windows 98 SE + DOS 7.1)
+4. Create P2: BFS/0xEB, 2GB (BeOS R5 Pro) — may need to enter partition type manually
+5. Create P3: NTFS, 20GB (Win Server 2003 R2) — format can happen during Server 2003 install
+6. Create P4: Ext3, 10GB (Debian) — format can happen during Debian install
+7. Create P5: FAT32, remaining space (shared data)
+8. Do NOT format P2, P3, P4 yet — let each OS installer format its own partition to avoid filesystem creation quirks
 
-### Phase 3: Install DOS 6.22 (P1)
-1. In BootIt BM, create boot item "DOS 6.22"
-   - Boot partition: P1
-   - Hide: P2, P3, P4, P5
-   - Show: P1, P6
-   - One Time Option: boot from floppy (for DOS install disk)
-2. Boot the "DOS 6.22" item with floppy
-3. Run DOS 6.22 setup, install to C: (P1 will appear as C:)
-4. After install, remove One Time Option from boot item
-
-### Phase 4: Install Windows 98 SE (P2)
+### Phase 3: Install Windows 98 SE (P1)
 1. Create boot item "Windows 98 SE"
-   - Boot partition: P2
-   - Hide: P1, P3, P4, P5
-   - Show: P2, P6
+   - Boot partition: P1
+   - Hide: P2, P3, P4
+   - Show: P1, P5
    - One Time Option: boot from CD (or Next BIOS Device if CD boots before HDD)
 2. Boot the "Windows 98 SE" item with CD
-3. Windows 98 setup should see P2 as C: (unformatted or formatted FAT32)
-4. Install to C: (P2)
+3. Windows 98 setup should see P1 as C: (unformatted or formatted FAT32)
+4. Install to C: (P1)
 5. After install, remove One Time Option
+6. **DOS 7.1 access:** No additional install needed. DOS 7.1 is built into Win98 SE. Access via F8 at boot → "Command Prompt Only", or from within Windows → "Restart in MS-DOS Mode". Configure real-mode DOS drivers (CD-ROM, mouse, sound) in CONFIG.SYS / AUTOEXEC.BAT as needed for DOS gaming.
 
-### Phase 5: Install BeOS R5 Pro + BONE (P3)
+### Phase 4: Install BeOS R5 Pro + BONE (P2)
 1. Create boot item "BeOS R5 Pro"
-   - Boot partition: P3
-   - Hide: P1, P2, P4, P5
-   - Show: P3 (and P6 optionally)
+   - Boot partition: P2
+   - Hide: P1, P3, P4
+   - Show: P2 (and P5 optionally)
    - One Time Option: boot from CD
 2. Boot the "BeOS R5 Pro" item with R5 Pro CD
-3. Use BeOS Drive Setup to initialize P3 with BFS (2KB block size recommended)
-4. Install BeOS R5 Pro to P3
+3. Use BeOS Drive Setup to initialize P2 with BFS (2KB block size recommended)
+4. Install BeOS R5 Pro to P2
 5. When prompted to install BeOS boot manager (bootman) -> No (BootIt BM handles booting)
 6. After R5 Pro is installed, install the BONE network stack:
    - Boot into R5 Pro
@@ -211,15 +185,15 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
    - Reboot and verify BONE is active (Network preferences should reflect the new stack)
 7. After BONE install, remove One Time Option from boot item
 
-### Phase 6: Install Windows Server 2003 R2 (P4)
+### Phase 5: Install Windows Server 2003 R2 (P3)
 1. Create boot item "Win Server 2003 R2"
-   - Boot partition: P4
-   - Hide: P1, P2, P3, P5
-   - Show: P4, P6
+   - Boot partition: P3
+   - Hide: P1, P2, P4
+   - Show: P3, P5
    - One Time Option: boot from CD
 2. Boot the "Win Server 2003 R2" item with Disc 1 (Server 2003 SP1)
-3. Server 2003 setup should see P4 as unpartitioned space — format as NTFS
-4. Install to P4 (will appear as C:)
+3. Server 2003 setup should see P3 as unpartitioned space — format as NTFS
+4. Install to P3 (will appear as C:)
 5. Disc 2 (R2 features) is optional — skip it for workstation use, or install only if you want updated MMC and .NET Framework 2.0
 6. After install, perform the workstation conversion (see server2003-workstation-conversion.md):
    - Disable IE Enhanced Security Configuration
@@ -233,32 +207,33 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 7. After conversion, remove One Time Option
 8. Note: Server 2003 R2 may try to write to the MBR. BootIt BM will survive this (it stores boot code in P0). Reboot into BootIt BM to confirm it still loads.
 
-### Phase 7: Install Debian Linux (P5)
+### Phase 6: Install Debian Linux (P4)
 1. Create boot item "Debian Linux"
-   - Boot partition: P5
-   - Hide: P1, P2, P3, P4
-   - Show: P5, P6
+   - Boot partition: P4
+   - Hide: P1, P2, P3
+   - Show: P4, P5
    - One Time Option: boot from CD
 2. Boot the "Debian Linux" item with Debian install CD
 3. During install:
-   - Partition/format P5 as Ext3 (or let installer do it)
-   - When asked about boot loader installation -> install to root partition boot sector (e.g., /dev/hda5 or /dev/sda5), NOT the MBR
+   - Partition/format P4 as Ext3 (or let installer do it)
+   - When asked about boot loader installation -> install to root partition boot sector (e.g., /dev/hda4 or /dev/sda4), NOT the MBR
    - Do NOT install GRUB to /dev/hda or /dev/sda (MBR) — BootIt BM owns the MBR
    - If using LILO (Debian 3.1 Sarge), same rule: install to root partition, not MBR
 4. Complete install
-5. In BootIt BM, verify the "Debian Linux" boot item points to P5 (where GRUB/LILO is installed)
-6. BootIt BM will chainload to GRUB/LILO on P5, which then boots Debian
+5. In BootIt BM, verify the "Debian Linux" boot item points to P4 (where GRUB/LILO is installed)
+6. BootIt BM will chainload to GRUB/LILO on P4, which then boots Debian
 7. After install, remove One Time Option
 
 ---
 
 ## 5. Pitfalls and Gotchas
 
-### DOS 6.22
-- **8GB cylinder limit:** DOS 6.22 cannot access anything beyond 8GB on the drive. Keep P1 within the first 8GB.
-- **FAT16 only:** DOS cannot see FAT32 partitions. The shared data partition (P6, FAT32) is invisible to DOS.
-- **2GB max partition:** FAT16 partition limit is 2GB. P1 at 1GB is safe.
-- **Boot files in first clusters:** IO.SYS and MSDOS.SYS must be in the first clusters of the partition. Do not resize P1 from the start after installing DOS — use Slide instead if repositioning is needed.
+### DOS 7.1 (via Windows 98 SE)
+- **No standalone DOS:** DOS 7.1 is accessed through Win98 SE (F8 → "Command Prompt Only" or "Restart in MS-DOS Mode"). No separate partition or boot item.
+- **FAT32 support:** DOS 7.1 supports FAT32 and LFN, unlike DOS 6.22. The Win98 partition (P1) and shared data (P5) are both FAT32 and visible from DOS.
+- **Real-mode drivers:** CONFIG.SYS and AUTOEXEC.BAT in the Win98 root handle DOS-mode driver loading (CD-ROM, mouse, sound). Configure these for DOS gaming.
+- **Edge cases:** For the rare game requiring true MS-DOS 6.22 behavior (not DOS 7.1), use a boot floppy or disk image. These are uncommon.
+- **Fast CPU issues:** Some very old DOS games crash on fast CPUs (PIII 500MHz+). Use CPU slowdown utilities (e.g., Mo'Slo) if needed.
 
 ### Windows 98 SE
 - **128GB drive limit:** If the drive exceeds 128GB, Win98 may fail to access the full capacity. Stay under 128GB or use rloew's patched drivers.
@@ -296,7 +271,7 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 
 ### General
 - **EMBR lock-in:** Once EMBR mode is enabled, no other partitioning tool can be used on this drive. Only BootIt BM.
-- **Install order:** Oldest first (DOS), newest last (Linux or XP). This minimizes MBR conflicts.
+- **Install order:** Oldest first (Win98), newest last (Debian). This minimizes MBR conflicts.
 - **BIOS settings:** Set IDE mode to Legacy/LBA. Disable AHCI if the hardware supports it (retro OSes prefer legacy IDE mode). If using SATA via adapter, ensure BIOS presents drives in legacy mode.
 - **Back up before starting:** Create a disk image of the entire drive after each OS install using BootIt BM's built-in Image for DOS. This gives recovery points.
 
@@ -326,7 +301,6 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 | Sound card | Sound Blaster compatible (TBD) | TBD | For DOS/Win98 audio |
 | Optical drive | CD/DVD-ROM | TBD | For OS install media |
 | BootIt BM | License (trial first) | Needed | 30-day trial, then purchase |
-| DOS 6.22 | Install media | Needed | Floppy disks or CD |
 | Windows 98 SE | Install media | Needed | Boot floppy + CD |
 | BeOS R5 Pro | Install media | Needed | CD |
 | BeOS BONE | Network stack package | Needed | Installed on top of R5 Pro |
