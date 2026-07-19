@@ -34,7 +34,7 @@ Each OS has era-specific limitations that constrain partition layout, drive size
 - BeOS Drive Setup can partition and format BFS; alternatively pre-create the partition in BootIt BM and format with 2KB block size
 - Recommended partition size: 2GB (BeOS R5 is small, but BONE + apps need room)
 - Position constraint: ideally within first 8GB for safest BIOS access (BeOS R5 uses INT 13h)
-- **BONE install:** Install BeOS R5 Pro first, then install the BONE (BeOS Networking Environment) package on top of R5 Pro. BONE is the improved network stack from the Dano codebase, but can be installed without upgrading the entire OS to Dano 5.1d. The original R5 net_server stack is poor (missing getsockopt, etc.). BONE replaces it with the newer Dano-era networking stack while keeping R5 Pro as the base OS. Download: bone7a.zip from https://www.be.wildman-productions.org/files/bone7a.zip (BeBytes archive). Install instructions: https://www.be.wildman-productions.org/index.php?action=displaypage&pagename=appitem&appid=112
+- **BONE install:** Install BeOS R5 Pro first, then install the BONE (BeOS Networking Environment) package on top of R5 Pro. BONE is the improved network stack from the Dano codebase, but can be installed without upgrading the entire OS to Dano 5.1d. The original R5 net_server stack is poor (missing getsockopt, etc.). BONE replaces it with the newer Dano-era networking stack while keeping R5 Pro as the base OS. Download BONE 7a (Beta) from Vetusware: https://vetusware.com/download/BONE%207a%20_Beta_/ — the original file was bone7a_install.zip (also distributed as bone7a.zip on BeBytes). The BeBytes site (be.wildman-productions.org) is currently offline. Install instructions (from cached BeBytes page): unzip to a bone_install directory, launch Terminal, cd to bone_install, run the install script. After install, disable default telnet/FTP services (user "baron") via BeMenu > Preferences > Boneyard > Services tab > Disable All.
 
 ### Windows Server 2003 R2 (converted to gaming workstation)
 - Filesystem: NTFS (recommended) or FAT32
@@ -306,7 +306,7 @@ Install oldest OS first, newest last. Each installer tends to overwrite the MBR;
 | Optical drive | CD/DVD-ROM | TBD | For OS install media |
 | BootIt BM | License (trial first) | Needed | 30-day trial, then purchase |
 | Windows 98 SE | Install media | Needed | Boot floppy + CD |
-| BeOS R5 Pro | Install media (5.0.3) | Needed | CD — https://archive.org/details/BeosVersion5.0.3IntelAndPpc (ISO, Intel+PPC). 5.0.3 is the updated Gobe Software release with bug fixes + driver updates over original 5.0. Install directly from CD — no separate patch. |
-| BeOS BONE | Network stack package (bone7a.zip) | Needed | https://www.be.wildman-productions.org/files/bone7a.zip — install on top of R5 Pro via Terminal |
+| BeOS R5 Pro | Install media (5.0.3) | Needed | CD — https://archive.org/details/BeosVersion5.0.3IntelAndPpc (ISO, Intel+PPC) or https://beos.retro-os.live/index.php/downloads/download/34-operating-system-files/108-beos-503 (mirror). 5.0.3 is the updated Gobe Software release with bug fixes + driver updates over original 5.0. Install directly from CD — no separate patch. |
+| BeOS BONE | Network stack package (bone7a) | Needed | https://vetusware.com/download/BONE%207a%20_Beta_/ (BONE 7a Beta by Be Inc.). Original file: bone7a_install.zip. BeBytes (wildman-productions.org) is currently offline. Install on top of R5 Pro via Terminal. |
 | Win Server 2003 R2 | 2-disc set + license | Confirmed | Disc 1 = SP1 base install, Disc 2 = R2 features (optional). Convert to workstation post-install. |
 | Debian Linux | Install CD | Needed | Sarge 3.1 or Bookworm 12 |
